@@ -12,7 +12,7 @@ Future<List<Mail>> fetchMails() async {
 
   final response = await http.get(
     //Uri.parse('http://127.0.0.1:8000/api/mails/'),
-    Uri.parse('http://192.168.1.133:8000/api/mails/'),
+    Uri.parse('https://192.168.1.133:8000/api/mails/'),
     headers: {
       "Authorization": "Bearer $token",
       "Content-Type": "application/json"

@@ -19,7 +19,7 @@ class _MailListScreenState extends State<MailListScreen> {
   Future<void> fetchMails() async {
     final response = await http.get(
       //Uri.parse('http://127.0.0.1:8000/api/get_emails/'),
-      Uri.parse('http://192.168.1.133:8000/api/get_emails/'),
+      Uri.parse('https://192.168.1.133:8000/api/get_emails/'),
     );
 
     if (response.statusCode == 200) {
