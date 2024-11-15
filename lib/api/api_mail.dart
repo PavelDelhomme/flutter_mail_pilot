@@ -5,11 +5,18 @@ import 'package:mail_pilot/models/mail.dart';
 
 Future<List<Mail>> fetchMails() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? token = prefs.getString('jwt_token');
 
-  // URI PC Portable Django : 192.168.1.189
+  if (token == null) {
+    throw Exception('User not authenticated');
+  }
+
   final response = await http.get(
-    Uri.parse('http://192.168.1.189:8000/api/login_with_email/'),
-    headers: {"Content-Type": "application/json"},
+    Uri.parse('http://192.168.1.189:8000/api/get_emails/'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
   );
 
   if (response.statusCode == 200) {
@@ -23,6 +30,27 @@ Future<List<Mail>> fetchMails() async {
       dateReceived: DateTime.parse(json['date']),
     )).toList();
   } else {
-    throw Exception("Failed to load emails");
+    throw Exception('Failed to load emails: ${response.body}');
   }
 }
+
+
+Future<void> configureIMAP(String imapEmail, String imapPassword, String jwtToken) async {
+  final response = await http.post(
+    Uri.parse('http://192.168.1.189:8000/api/configure_imap/'),
+    headers: {
+      'Authorization': 'Bearer $jwtToken', // JWT pour authentification
+      'Content-Type': 'application/json',
+    },
+    body: json.encode({
+      'imap_email': imapEmail,
+      'imap_password': imapPassword,
+      'imap_host': 'imap.mail.ovh.net', // Par défaut, OVH
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to configure IMAP: ${response.body}');
+  }
+}
+

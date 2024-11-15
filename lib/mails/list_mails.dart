@@ -1,6 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:mail_pilot/models/mail.dart';
+
+import '../api/api_mail.dart';
 
 class MailListScreen extends StatefulWidget {
   @override
@@ -8,27 +9,12 @@ class MailListScreen extends StatefulWidget {
 }
 
 class _MailListScreenState extends State<MailListScreen> {
-  List<dynamic> mails = [];
+  late Future<List<Mail>> futureMails;
 
   @override
   void initState() {
     super.initState();
-    fetchMails();
-  }
-
-  Future<void> fetchMails() async {
-    final response = await http.get(
-      //Uri.parse('http://127.0.0.1:8000/api/get_emails/'),
-      Uri.parse('https://192.168.1.133:8000/api/get_emails/'),
-    );
-
-    if (response.statusCode == 200) {
-      setState(() {
-        mails = json.decode(response.body);
-      });
-    } else {
-      throw Exception('Failed to load emails');
-    }
+    futureMails = fetchMails(); // Récupère les emails au chargement
   }
 
   @override
@@ -37,14 +23,28 @@ class _MailListScreenState extends State<MailListScreen> {
       appBar: AppBar(
         title: Text("Mails"),
       ),
-      body: ListView.builder(
-        itemCount: mails.length,
-        itemBuilder: (context, index) {
-          final mail = mails[index];
-          return ListTile(
-            title: Text(mail['subject']),
-            subtitle: Text(mail['from']),
-          );
+      body: FutureBuilder<List<Mail>>(
+        future: futureMails,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text("No emails found."));
+          } else {
+            final mails = snapshot.data!;
+            return ListView.builder(
+              itemCount: mails.length,
+              itemBuilder: (context, index) {
+                final mail = mails[index];
+                return ListTile(
+                  title: Text(mail.subject),
+                  subtitle: Text(mail.from),
+                );
+              },
+            );
+          }
         },
       ),
     );
